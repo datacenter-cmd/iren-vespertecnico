@@ -391,6 +391,7 @@ if nav == "📊 Dashboard":
         fig_ann.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', height=300,
             margin=dict(t=20, b=10, l=10, r=10),
+            xaxis=dict(type='category', tickfont=dict(size=14, family='Inter')),
             yaxis=dict(gridcolor='#f0f0f0', tickprefix='€ ', tickformat=',.0f'),
             font=dict(family='Inter')
         )
