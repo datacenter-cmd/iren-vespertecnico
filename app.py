@@ -321,7 +321,7 @@ with st.sidebar:
 
     authenticator.logout("🚪 Logout", location="sidebar")
 
-    st.markdown('<div style="font-size:10px; color:#4a7a9a; text-align:center; padding-top:12px;">© 2026 Maori – Vesper<br>Portale Gestionale IREN</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:10px; color:#4a7a9a; text-align:center; padding-top:12px;">© 2026 Maori Group</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PAGE: DASHBOARD
