@@ -11,7 +11,7 @@ import requests
 # CONFIG PAGINA
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="Vesper – Portale IREN",
+    page_title="Vesper – Lavorazioni per Maori",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -90,7 +90,7 @@ with col_mid:
     <div style="text-align:center; padding: 40px 0 10px 0;">
         <div style="font-size:52px;">⚡</div>
         <div style="font-size:24px; font-weight:700; color:#0d1b2a; margin-top:8px;">VESPER</div>
-        <div style="font-size:13px; color:#8899aa; letter-spacing:2px; margin-bottom:24px;">PORTALE GESTIONALE IREN</div>
+        <div style="font-size:13px; color:#8899aa; letter-spacing:2px; margin-bottom:24px;">LAVORAZIONI PER MAORI</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -331,8 +331,8 @@ if nav == "📊 Dashboard":
     st.markdown("""
     <div style="background:linear-gradient(135deg,#0d1b2a 0%,#1a3a5c 60%,#2471a3 100%);
         border-radius:16px; padding:28px 32px; margin-bottom:24px;">
-        <h1 style="color:white; font-size:26px; font-weight:700; margin:0;">⚡ Portale Gestionale IREN</h1>
-        <p style="color:#90b8d8; font-size:14px; margin:4px 0 0 0;">Vesper · Ufficio Tecnico · Riepilogo lavorazioni e fatturato</p>
+        <h1 style="color:white; font-size:26px; font-weight:700; margin:0;">⚡ Portale Lavorazioni Vesper per Maori</h1>
+        <p style="color:#90b8d8; font-size:14px; margin:4px 0 0 0;">Vesper · Ufficio Tecnico · Lavorazioni per Maori Group</p>
     </div>
     """, unsafe_allow_html=True)
 
