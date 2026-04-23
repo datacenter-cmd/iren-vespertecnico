@@ -11,7 +11,7 @@ import requests
 # CONFIG PAGINA
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="Vesper – Lavorazioni per Maori",
+    page_title="Maori - Vesper",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -89,8 +89,8 @@ with col_mid:
     st.markdown("""
     <div style="text-align:center; padding: 40px 0 10px 0;">
         <div style="font-size:52px;">⚡</div>
-        <div style="font-size:24px; font-weight:700; color:#0d1b2a; margin-top:8px;">VESPER</div>
-        <div style="font-size:13px; color:#8899aa; letter-spacing:2px; margin-bottom:24px;">LAVORAZIONI PER MAORI</div>
+        <div style="font-size:24px; font-weight:700; color:#0d1b2a; margin-top:8px;">MAORI - VESPER</div>
+        <div style="font-size:13px; color:#8899aa; letter-spacing:2px; margin-bottom:24px;">LAVORAZIONI VESPER PER MAORI</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -297,7 +297,7 @@ with st.sidebar:
     st.markdown(f"""
     <div style="text-align:center; padding: 20px 0 10px 0;">
         <div style="font-size:42px;">⚡</div>
-        <div style="font-size:18px; font-weight:700; color:#e8f0fe; margin-top:6px;">VESPER</div>
+        <div style="font-size:18px; font-weight:700; color:#e8f0fe; margin-top:6px;">MAORI - VESPER</div>
         <div style="font-size:11px; color:#6a98c0; letter-spacing:2px;">PORTALE IREN</div>
     </div>
     <hr style="border-color:#2a4a6a; margin:10px 0 16px 0;">
@@ -321,7 +321,7 @@ with st.sidebar:
 
     authenticator.logout("🚪 Logout", location="sidebar")
 
-    st.markdown('<div style="font-size:10px; color:#4a7a9a; text-align:center; padding-top:12px;">© 2026 Vesper<br>Portale Gestionale IREN</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:10px; color:#4a7a9a; text-align:center; padding-top:12px;">© 2026 Maori – Vesper<br>Portale Gestionale IREN</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PAGE: DASHBOARD
@@ -331,8 +331,8 @@ if nav == "📊 Dashboard":
     st.markdown("""
     <div style="background:linear-gradient(135deg,#0d1b2a 0%,#1a3a5c 60%,#2471a3 100%);
         border-radius:16px; padding:28px 32px; margin-bottom:24px;">
-        <h1 style="color:white; font-size:26px; font-weight:700; margin:0;">⚡ Portale Lavorazioni Vesper per Maori</h1>
-        <p style="color:#90b8d8; font-size:14px; margin:4px 0 0 0;">Vesper · Ufficio Tecnico · Lavorazioni per Maori Group</p>
+        <h1 style="color:white; font-size:26px; font-weight:700; margin:0;">⚡ Maori – Vesper</h1>
+        <p style="color:#90b8d8; font-size:14px; margin:4px 0 0 0;">Lavorazioni Vesper per Maori</p>
     </div>
     """, unsafe_allow_html=True)
 
