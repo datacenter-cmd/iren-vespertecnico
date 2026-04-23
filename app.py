@@ -1,9 +1,14 @@
 import streamlit as st
+import streamlit_authenticator as stauth
 import pandas as pd
 import plotly.graph_objects as go
+import yaml
+from yaml.loader import SafeLoader
+import io
+import requests
 
 # ─────────────────────────────────────────────
-# CONFIG
+# CONFIG PAGINA
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="Vesper – Portale IREN",
@@ -12,6 +17,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ─────────────────────────────────────────────
+# CSS
+# ─────────────────────────────────────────────
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -33,20 +41,60 @@ st.markdown("""
     .badge-completata     { background:#d4edda; color:#155724; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
     .badge-in-lavorazione { background:#fff3cd; color:#856404; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
     .badge-ko             { background:#f8d7da; color:#721c24; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+    div[data-testid="stForm"] { background: white; border-radius: 16px; padding: 32px; 
+        box-shadow: 0 4px 24px rgba(0,0,0,0.10); max-width: 420px; margin: 80px auto; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
+# LOGIN
+# ─────────────────────────────────────────────
+with open('config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+)
+
+col_login, col_mid, col_right = st.columns([1, 1, 1])
+with col_mid:
+    st.markdown("""
+    <div style="text-align:center; padding: 40px 0 10px 0;">
+        <div style="font-size:52px;">⚡</div>
+        <div style="font-size:24px; font-weight:700; color:#0d1b2a; margin-top:8px;">VESPER</div>
+        <div style="font-size:13px; color:#8899aa; letter-spacing:2px; margin-bottom:24px;">PORTALE GESTIONALE IREN</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+authenticator.login(location='main')
+
+if st.session_state.get("authentication_status") is False:
+    st.error("❌ Username o password non corretti")
+    st.stop()
+elif st.session_state.get("authentication_status") is None:
+    st.stop()
+
+# ─────────────────────────────────────────────
+# UTENTE AUTENTICATO — DA QUI IN POI
+# ─────────────────────────────────────────────
+name     = st.session_state.get("name", "")
+username = st.session_state.get("username", "")
+role     = config['credentials']['usernames'].get(username, {}).get('role', 'viewer')
+
+# ─────────────────────────────────────────────
 # CONSTANTS
 # ─────────────────────────────────────────────
-FILE_PATH = "analitico-iren-utecnico.xlsx"
+SHEET_ID = "1lnaDVhHFEZVGcCKEq2oq6usAbdI18wyJ-G2yQbfiSTQ"
+SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
 
 MONTHLY_SHEETS = [
     '09-24','10-24','11-24','12-24',
     '01-25','02-25','03-25','04-25','05-25','06-25','07-25','08-25','09-25','10-25','11-25','12-25',
     '01-26','02-26','03-26'
 ]
-
 MONTH_LABELS = {
     '09-24':'Set 2024','10-24':'Ott 2024','11-24':'Nov 2024','12-24':'Dic 2024',
     '01-25':'Gen 2025','02-25':'Feb 2025','03-25':'Mar 2025','04-25':'Apr 2025',
@@ -54,7 +102,6 @@ MONTH_LABELS = {
     '09-25':'Set 2025','10-25':'Ott 2025','11-25':'Nov 2025','12-25':'Dic 2025',
     '01-26':'Gen 2026','02-26':'Feb 2026','03-26':'Mar 2026',
 }
-
 COLORS = {
     'primary':   '#1a3a5c',
     'secondary': '#2471a3',
@@ -98,14 +145,18 @@ def badge(stato):
     return f'<span>{stato}</span>'
 
 # ─────────────────────────────────────────────
-# LOAD DATA
+# LOAD DATA DA GOOGLE SHEETS
 # ─────────────────────────────────────────────
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_all_data():
-    xl = pd.ExcelFile(FILE_PATH)
+    response = requests.get(SHEET_URL)
+    response.raise_for_status()
+    xl = pd.ExcelFile(io.BytesIO(response.content))
 
     monthly = {}
     for sheet in MONTHLY_SHEETS:
+        if sheet not in xl.sheet_names:
+            continue
         df = xl.parse(sheet, header=None)
         totale = None
         for col in [9, 8]:
@@ -170,7 +221,6 @@ def load_all_data():
                 'leads': leads,
                 'mese': sheet,
             })
-
         monthly[sheet] = {'totale': totale, 'lavorazioni': lavorazioni}
 
     df_vista = xl.parse('Vista Per ID UFFICIO TECNICO', header=0)
@@ -192,36 +242,44 @@ def load_all_data():
 
     return monthly, df_vista, df_lista, df_fatture, df_det_iren
 
-monthly, df_vista, df_lista, df_fatture, df_det_iren = load_all_data()
+try:
+    monthly, df_vista, df_lista, df_fatture, df_det_iren = load_all_data()
+except Exception as e:
+    st.error(f"❌ Errore nel caricamento dati da Google Sheets: {e}")
+    st.stop()
 
 # ─────────────────────────────────────────────
 # GLOBAL CALCS
 # ─────────────────────────────────────────────
 df_monthly_totals = pd.DataFrame([
-    {'sheet': s, 'label': MONTH_LABELS[s], 'totale': monthly[s]['totale'] or 0,
+    {'sheet': s, 'label': MONTH_LABELS[s], 'totale': monthly.get(s, {}).get('totale') or 0,
      'anno': '20' + s.split('-')[1]}
-    for s in MONTHLY_SHEETS
+    for s in MONTHLY_SHEETS if s in monthly
 ])
 
-totale_generale    = df_monthly_totals['totale'].sum()
-n_pratiche_totali  = len(df_vista)
-n_completate       = len(df_vista[df_vista['Lavoro Ultimato Avanzamento'] == 'COMPLETATA'])
-n_in_lav           = len(df_vista[df_vista['Lavoro Ultimato Avanzamento'] == 'IN LAVORAZIONE'])
-n_ko               = len(df_vista[df_vista['Lavoro Ultimato Avanzamento'] == 'K.O.'])
-totale_iren_pagato = pd.to_numeric(df_vista['Iren'], errors='coerce').sum()
-totale_ricavi_maori= pd.to_numeric(df_vista['Ricavo Maori'], errors='coerce').sum()
+totale_generale     = df_monthly_totals['totale'].sum()
+n_pratiche_totali   = len(df_vista)
+n_completate        = len(df_vista[df_vista['Lavoro Ultimato Avanzamento'] == 'COMPLETATA'])
+n_in_lav            = len(df_vista[df_vista['Lavoro Ultimato Avanzamento'] == 'IN LAVORAZIONE'])
+n_ko                = len(df_vista[df_vista['Lavoro Ultimato Avanzamento'] == 'K.O.'])
+totale_iren_pagato  = pd.to_numeric(df_vista['Iren'], errors='coerce').sum()
+totale_ricavi_maori = pd.to_numeric(df_vista['Ricavo Maori'], errors='coerce').sum()
 
 # ─────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("""
+    st.markdown(f"""
     <div style="text-align:center; padding: 20px 0 10px 0;">
         <div style="font-size:42px;">⚡</div>
         <div style="font-size:18px; font-weight:700; color:#e8f0fe; margin-top:6px;">VESPER</div>
         <div style="font-size:11px; color:#6a98c0; letter-spacing:2px;">PORTALE IREN</div>
     </div>
-    <hr style="border-color:#2a4a6a; margin:10px 0 20px 0;">
+    <hr style="border-color:#2a4a6a; margin:10px 0 16px 0;">
+    <div style="font-size:12px; color:#90b8d8; text-align:center; margin-bottom:16px;">
+        👤 {name}<br>
+        <span style="font-size:10px; color:#4a7a9a;">{'🔑 Amministratore' if role == 'admin' else '👁 Viewer'}</span>
+    </div>
     """, unsafe_allow_html=True)
 
     nav = st.radio(
@@ -230,8 +288,15 @@ with st.sidebar:
         label_visibility="collapsed"
     )
 
-    st.markdown('<hr style="border-color:#2a4a6a; margin-top:30px;">', unsafe_allow_html=True)
-    st.markdown('<div style="font-size:10px; color:#4a7a9a; text-align:center; padding-top:8px;">© 2026 Vesper<br>Portale Gestionale IREN</div>', unsafe_allow_html=True)
+    st.markdown('<hr style="border-color:#2a4a6a; margin-top:20px;">', unsafe_allow_html=True)
+
+    if st.button("🔄 Aggiorna Dati", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+    authenticator.logout("🚪 Logout", location="sidebar")
+
+    st.markdown('<div style="font-size:10px; color:#4a7a9a; text-align:center; padding-top:12px;">© 2026 Vesper<br>Portale Gestionale IREN</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PAGE: DASHBOARD
@@ -262,8 +327,7 @@ if nav == "📊 Dashboard":
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=df_plot['label'], y=df_plot['totale'],
-        marker_color=bar_colors,
-        marker_line_color='white', marker_line_width=1.5,
+        marker_color=bar_colors, marker_line_color='white', marker_line_width=1.5,
         text=[fmt_eur(v) if v > 0 else '' for v in df_plot['totale']],
         textposition='outside', textfont=dict(size=10, color='#0d1b2a'),
         hovertemplate='<b>%{x}</b><br>Fatturato: %{y:,.2f} €<extra></extra>',
@@ -288,7 +352,6 @@ if nav == "📊 Dashboard":
     st.plotly_chart(fig, use_container_width=True)
 
     col_a, col_b = st.columns(2)
-
     with col_a:
         st.markdown('<div class="section-title">📅 Riepilogo Annuo</div>', unsafe_allow_html=True)
         df_annuo = df_monthly_totals.groupby('anno')['totale'].sum().reset_index()
@@ -335,10 +398,11 @@ if nav == "📊 Dashboard":
         kpi_card("Fatturato 2026 (YTD)", fmt_eur(df_2026['totale'].sum()),
                  f"{len(df_2026)} mesi registrati", "green")
 
-    # Heatmap
     st.markdown('<div class="section-title">🔥 Heatmap Lavorazioni per Mese</div>', unsafe_allow_html=True)
     tipo_map = {}
     for sheet in MONTHLY_SHEETS:
+        if sheet not in monthly:
+            continue
         for lav in monthly[sheet]['lavorazioni']:
             desc = lav['descrizione']
             n = lav['n_lavorazioni'] or 0
@@ -377,11 +441,10 @@ if nav == "📊 Dashboard":
 elif nav == "📅 Vista Mensile":
     st.markdown("<h2 style='color:#0d1b2a;'>📅 Vista Mensile</h2>", unsafe_allow_html=True)
 
-    selected_sheet = st.selectbox(
-        "Seleziona mese", MONTHLY_SHEETS,
-        format_func=lambda s: MONTH_LABELS[s],
-        index=len(MONTHLY_SHEETS)-1
-    )
+    available = [s for s in MONTHLY_SHEETS if s in monthly]
+    selected_sheet = st.selectbox("Seleziona mese", available,
+                                   format_func=lambda s: MONTH_LABELS[s],
+                                   index=len(available)-1)
     data = monthly[selected_sheet]
     lavorazioni = data['lavorazioni']
 
@@ -418,11 +481,11 @@ elif nav == "📅 Vista Mensile":
 
     if all_leads:
         st.markdown('<div class="section-title">🎯 Lead Associati</div>', unsafe_allow_html=True)
-        df_leads_show = pd.DataFrame(all_leads)
-        df_leads_show['ID'] = df_leads_show['Lead'].apply(lambda x: x.split('_')[0].strip() if '_' in x else x)
-        df_leads_show['Cliente'] = df_leads_show['Lead'].apply(lambda x: x.split('_', 1)[1].strip() if '_' in x else '')
-        df_leads_show['ID_int'] = pd.to_numeric(df_leads_show['ID'], errors='coerce')
-        df_enriched = df_leads_show.merge(
+        df_ls = pd.DataFrame(all_leads)
+        df_ls['ID'] = df_ls['Lead'].apply(lambda x: x.split('_')[0].strip() if '_' in x else x)
+        df_ls['Cliente'] = df_ls['Lead'].apply(lambda x: x.split('_', 1)[1].strip() if '_' in x else '')
+        df_ls['ID_int'] = pd.to_numeric(df_ls['ID'], errors='coerce')
+        df_enriched = df_ls.merge(
             df_vista[['Tutti gli id','Lavoro Ultimato Avanzamento','Iren','Ricavo Maori']],
             left_on='ID_int', right_on='Tutti gli id', how='left'
         )[['ID','Cliente','Lavorazione','Lavoro Ultimato Avanzamento','Iren','Ricavo Maori']]
@@ -440,8 +503,7 @@ elif nav == "🔍 Ricerca Pratiche":
         search_text = st.text_input("🔎 Cerca per ID o Nome Cliente", placeholder="es. 56720 oppure Rossi")
     with col_s2:
         filter_stato = st.multiselect("Filtra per Stato",
-            ['COMPLETATA','IN LAVORAZIONE','K.O.'],
-            default=['COMPLETATA','IN LAVORAZIONE','K.O.'])
+            ['COMPLETATA','IN LAVORAZIONE','K.O.'], default=['COMPLETATA','IN LAVORAZIONE','K.O.'])
     with col_s3:
         filter_presente = st.multiselect("Presente In", df_vista['Presente In'].dropna().unique().tolist())
 

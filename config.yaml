@@ -1,0 +1,26 @@
+credentials:
+  usernames:
+    ignazio.gatta:
+      name: Ignazio Gatta
+      password: "$2b$12$zCCi/AUKAa7un5qPe5g3wuLeK/k7CfT3EVJNcSahAHBKp9Uw6dnCW"
+      role: admin
+    mario.rossi:
+      name: Mario Rossi
+      password: "$2b$12$cR5/wqAQU7ItduNPrUy7K.nI.Cj6cZnm9dbIU0Bp7qlh0eCIvw14K"
+      role: viewer
+    anna.bianchi:
+      name: Anna Bianchi
+      password: "$2b$12$92vsYS0oLK.AGB3obRPD.uVnzaVE4SVQ57L2V.c551GDVBGeh9Wou"
+      role: viewer
+    luca.verdi:
+      name: Luca Verdi
+      password: "$2b$12$3N/5/iuPmr2vD/elAWi6.uZOXK0c5WF71JEY1v80iZ01zJHUIMi76"
+      role: viewer
+    sara.neri:
+      name: Sara Neri
+      password: "$2b$12$OCUl1m.3eC9im8lBcpf6Qei0lzp0goYnUnXWsK/O9kmA69KrUJqZG"
+      role: viewer
+cookie:
+  expiry_days: 7
+  key: vesper_iren_secret_2026
+  name: vesper_iren_cookie
