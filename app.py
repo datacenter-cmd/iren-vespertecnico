@@ -298,7 +298,7 @@ with st.sidebar:
     <div style="text-align:center; padding: 20px 0 10px 0;">
         <div style="font-size:42px;">⚡</div>
         <div style="font-size:18px; font-weight:700; color:#e8f0fe; margin-top:6px;">MAORI - VESPER</div>
-        <div style="font-size:11px; color:#6a98c0; letter-spacing:2px;">PORTALE IREN</div>
+
     </div>
     <hr style="border-color:#2a4a6a; margin:10px 0 16px 0;">
     <div style="font-size:12px; color:#90b8d8; text-align:center; margin-bottom:16px;">
