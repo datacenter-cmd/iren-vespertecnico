@@ -43,6 +43,31 @@ st.markdown("""
     .badge-ko             { background:#f8d7da; color:#721c24; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
     div[data-testid="stForm"] { background: white; border-radius: 16px; padding: 32px; 
         box-shadow: 0 4px 24px rgba(0,0,0,0.10); max-width: 420px; margin: 80px auto; }
+
+    /* Sidebar buttons */
+    [data-testid="stSidebar"] .stButton > button {
+        background-color: rgba(255,255,255,0.08) !important;
+        color: #e8f0fe !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background-color: rgba(255,255,255,0.18) !important;
+        border-color: rgba(255,255,255,0.4) !important;
+        color: white !important;
+    }
+    /* Sidebar logout button */
+    [data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+        background-color: rgba(231,76,60,0.2) !important;
+        border-color: rgba(231,76,60,0.4) !important;
+        color: #ffaaaa !important;
+    }
+    [data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+        background-color: rgba(231,76,60,0.4) !important;
+        color: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
