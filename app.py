@@ -265,10 +265,12 @@ def load_all_data():
     df_det_iren = df_det_iren.dropna(subset=['ID'])
     df_det_iren['ID'] = df_det_iren['ID'].astype(int)
 
-    return monthly, df_vista, df_lista, df_fatture, df_det_iren
+    df_listino_vesper = xl.parse('listino vesper', header=None)
+    df_listino_iren   = xl.parse('listino iren',   header=None)
+    return monthly, df_vista, df_lista, df_fatture, df_det_iren, df_listino_vesper, df_listino_iren
 
 try:
-    monthly, df_vista, df_lista, df_fatture, df_det_iren = load_all_data()
+    monthly, df_vista, df_lista, df_fatture, df_det_iren, df_listino_vesper, df_listino_iren = load_all_data()
 except Exception as e:
     st.error(f"❌ Errore nel caricamento dati da Google Sheets: {e}")
     st.stop()
@@ -309,7 +311,7 @@ with st.sidebar:
 
     nav = st.radio(
         "Navigazione",
-        ["📊 Dashboard", "📅 Vista Mensile", "🔍 Ricerca Pratiche", "💶 Finanziario"],
+        ["📊 Dashboard", "📅 Vista Mensile", "🔍 Ricerca Pratiche", "💶 Finanziario", "📋 Listino Vesper", "📋 Listino IREN"],
         label_visibility="collapsed"
     )
 
@@ -643,7 +645,91 @@ elif nav == "💶 Finanziario":
     st.plotly_chart(fig_fin, use_container_width=True)
 
     st.markdown('<div class="section-title">🆔 ID Pagati da IREN</div>', unsafe_allow_html=True)
-    df_dd = df_det_iren[['ID','PAGATO','richiesta mese']].copy()
+    df_dd = df_det_iren[['ID','PAGATO','richiesta mese','anno richiesta']].copy() if 'anno richiesta' in df_det_iren.columns else df_det_iren[['ID','PAGATO','richiesta mese']].copy()
+    if 'anno richiesta' in df_det_iren.columns:
+        df_dd['Mese Richiesta'] = df_dd['richiesta mese'].astype(str) + ' ' + df_dd['anno richiesta'].astype(str).str.replace('.0','', regex=False)
+        df_dd = df_dd[['ID','PAGATO','Mese Richiesta']].copy()
+    else:
+        df_dd.columns = ['ID Pratica','Importo Pagato (€)','Mese Richiesta']
     df_dd.columns = ['ID Pratica','Importo Pagato (€)','Mese Richiesta']
     df_dd['Importo Pagato (€)'] = pd.to_numeric(df_dd['Importo Pagato (€)'], errors='coerce').apply(fmt_eur)
     st.dataframe(df_dd, use_container_width=True, hide_index=True)
+
+# ─────────────────────────────────────────────
+# PAGE: LISTINO VESPER
+# ─────────────────────────────────────────────
+elif nav == "📋 Listino Vesper":
+    st.markdown("<h2 style='color:#0d1b2a;'>📋 Listino Vesper</h2>", unsafe_allow_html=True)
+
+    df_lv = df_listino_vesper.copy()
+    # Estrai righe valide (col 1 = descrizione, col 2 = importo)
+    df_lv = df_lv.iloc[2:].reset_index(drop=True)
+    df_lv = df_lv[[df_lv.columns[1], df_lv.columns[2]]].copy()
+    df_lv.columns = ['Lavorazione', 'Importo (€)']
+    df_lv = df_lv[df_lv['Lavorazione'].notna() & (df_lv['Lavorazione'].astype(str).str.strip() != '')].reset_index(drop=True)
+    df_lv['Importo (€)'] = pd.to_numeric(df_lv['Importo (€)'], errors='coerce').apply(
+        lambda x: f"€ {x:,.2f}".replace(",","X").replace(".",",").replace("X",".") if pd.notna(x) else "–"
+    )
+
+    st.markdown("""
+    <div style="background:white; border-radius:16px; padding:20px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:20px;">
+        <div style="font-size:13px; color:#666; margin-bottom:4px;">Tariffario ufficiale Vesper per lavorazioni IREN</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    for _, row in df_lv.iterrows():
+        st.markdown(f"""
+        <div style="display:flex; justify-content:space-between; align-items:center;
+            background:white; border-radius:10px; padding:14px 20px; margin-bottom:8px;
+            box-shadow:0 1px 6px rgba(0,0,0,0.06); border-left:4px solid #1a3a5c;">
+            <span style="font-size:14px; color:#0d1b2a; font-weight:500;">{row['Lavorazione']}</span>
+            <span style="font-size:16px; font-weight:700; color:#1a3a5c;">{row['Importo (€)']}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# PAGE: LISTINO IREN
+# ─────────────────────────────────────────────
+elif nav == "📋 Listino IREN":
+    st.markdown("<h2 style='color:#0d1b2a;'>📋 Listino IREN</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#666; font-size:13px;'>Allegato C – Master Agreement IREN</p>", unsafe_allow_html=True)
+
+    df_li = df_listino_iren.copy()
+    df_li = df_li.iloc[2:].reset_index(drop=True)
+    df_li.columns = ['_', 'Categoria', 'Descrizione', 'Importo (€)']
+
+    current_cat = ""
+    for _, row in df_li.iterrows():
+        cat   = str(row['Categoria']).strip() if pd.notna(row['Categoria']) else ""
+        desc  = str(row['Descrizione']).strip() if pd.notna(row['Descrizione']) else ""
+        imp   = str(row['Importo (€)']).strip() if pd.notna(row['Importo (€)']) else ""
+
+        if not desc or desc == 'nan':
+            continue
+
+        if cat and cat != 'nan':
+            current_cat = cat.upper()
+            st.markdown(f"""
+            <div style="background:linear-gradient(135deg,#0d1b2a,#1a3a5c); color:white;
+                border-radius:10px; padding:10px 18px; margin:18px 0 8px 0; font-weight:700; font-size:13px; letter-spacing:1px;">
+                {current_cat}
+            </div>
+            """, unsafe_allow_html=True)
+
+        try:
+            imp_num = float(imp)
+            imp_fmt = f"€ {imp_num:,.2f}".replace(",","X").replace(".",",").replace("X",".")
+            imp_color = "#1a3a5c"
+        except:
+            imp_fmt = imp if imp and imp != 'nan' else "–"
+            imp_color = "#888"
+
+        desc_clean = desc.replace('\n', ' ')
+        st.markdown(f"""
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;
+            background:white; border-radius:10px; padding:12px 18px; margin-bottom:6px;
+            box-shadow:0 1px 6px rgba(0,0,0,0.06); border-left:4px solid #2471a3;">
+            <span style="font-size:13px; color:#333; flex:1; padding-right:20px;">{desc_clean}</span>
+            <span style="font-size:15px; font-weight:700; color:{imp_color}; white-space:nowrap;">{imp_fmt}</span>
+        </div>
+        """, unsafe_allow_html=True)
