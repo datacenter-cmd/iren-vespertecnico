@@ -690,7 +690,7 @@ elif nav == "📋 Listino Vesper":
 # ─────────────────────────────────────────────
 # PAGE: LISTINO IREN
 # ─────────────────────────────────────────────
-elif nav == "📋 Listino IREN":
+elif nav == "📋 Listino Iren":
     st.markdown("<h2 style='color:#0d1b2a;'>📋 Listino IREN</h2>", unsafe_allow_html=True)
     st.markdown("<p style='color:#666; font-size:13px;'>Allegato C – Master Agreement IREN</p>", unsafe_allow_html=True)
 
